@@ -2,6 +2,8 @@
 
 namespace Edujugon\PushNotification\Channels;
 
+use Edujugon\PushNotification\Messages\PushMessage;
+
 class FcmChannel extends GcmChannel
 {
     /**
@@ -10,5 +12,16 @@ class FcmChannel extends GcmChannel
     protected function pushServiceName()
     {
         return 'fcm';
+    }
+    
+    protected function buildData(PushMessage $message)
+    {
+        return [
+            'notification' => [
+                'title' => $message->title,
+                'body' => $message->body,
+            ],
+            'data' => $message->extra,
+        ];
     }
 }
