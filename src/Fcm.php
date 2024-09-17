@@ -4,7 +4,6 @@ namespace Edujugon\PushNotification;
 
 use Carbon\Carbon;
 use Edujugon\PushNotification\Exceptions\PushNotificationException;
-use Exception;
 use Google\Client as GoogleClient;
 use Google\Service\FirebaseCloudMessaging;
 use GuzzleHttp\Client;
@@ -15,7 +14,7 @@ use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-class Fcm extends Gcm
+class Fcm extends PushService implements Contracts\PushServiceInterface
 {
     const CACHE_SECONDS = 55 * 60; // 55 minutes
 
@@ -29,7 +28,11 @@ class Fcm extends Gcm
     protected $unregisteredDeviceTokens = [];
 
     protected $feedbacks = [];
-
+    /**
+     * @var Client
+     */
+    private $client;
+    
     /**
      * Fcm constructor.
      * Override parent constructor.
@@ -45,22 +48,12 @@ class Fcm extends Gcm
 
         $this->concurrentRequests = $this->config['concurrentRequests'] ?? 10;
     }
-    
-    /**
-     * Set the apiKey for the notification
-     * @param string $apiKey
-     * @throws Exception
-     */
-    public function setApiKey($apiKey)
-    {
-        throw new Exception('Not available on FCM V1');
-    }
 
     /**
      * Set the projectId for the notification
      * @param string $projectId
      */
-    public function setProjectId($projectId)
+    public function setProjectId(string $projectId)
     {
         $this->config['projectId'] = $projectId;
 
@@ -71,7 +64,7 @@ class Fcm extends Gcm
      * Set the jsonFile path for the notification
      * @param string $jsonFile
      */
-    public function setJsonFile($jsonFile)
+    public function setJsonFile(string $jsonFile)
     {
         $this->config['jsonFile'] = $jsonFile;
     }
@@ -107,12 +100,10 @@ class Fcm extends Gcm
      * @param  array $deviceTokens
      * @param array $message
      *
-     * @return \stdClass  GCM Response
      */
-    public function send(array $deviceTokens, array $message)
+    public function send(array $deviceTokens, array $message): void
     {
         // FCM v1 does not allows multiple devices at once
-
         $headers = $this->addRequestHeaders();
         $jsonData = ['message' => $this->buildMessage($message)];
 
@@ -120,6 +111,7 @@ class Fcm extends Gcm
         $this->unregisteredDeviceTokens = [];
 
         $requests = [];
+        
         foreach ($deviceTokens as $deviceToken) {
             $jsonData['message']['token'] = $deviceToken;
 
@@ -160,16 +152,16 @@ class Fcm extends Gcm
         // Force the pool of requests to complete.
         $promise->wait();
 
-        $this->setFeedback($this->feedbacks);
+        $this->setFeedback((object)$this->feedbacks);
     }
 
     /**
-     * Provide the unregistered tokens of the sent notification.
+     * Provide the unregistered tokens of the notification.
      *
      * @param array $devices_token
      * @return array $tokenUnRegistered
      */
-    public function getUnregisteredDeviceTokens(array $devices_token)
+    public function getUnregisteredDeviceTokens(array $devices_token): array
     {
         return $this->unregisteredDeviceTokens;
     }
@@ -182,13 +174,27 @@ class Fcm extends Gcm
      * @param $isCondition
      * @return array
      */
-    protected function buildData($topic, $message, $isCondition)
+    protected function buildData($topic, $message, $isCondition): array
     {
         $condition = $isCondition ? ['condition' => $topic] : ['to' => '/topics/' . $topic];
 
         return [
             'message' => array_merge($condition, $this->buildMessage($message)),
         ];
+    }
+    
+    /**
+     * @param $message
+     * @return array
+     */
+    protected function buildMessage($message): array
+    {
+        // if no notification nor data keys, then set Data Message as default.
+        if (!array_key_exists('data', $message) && !array_key_exists('notification', $message)) {
+            return ['data' => $message];
+        }
+        
+        return $message;
     }
 
     protected function getOauthToken()

@@ -4,7 +4,7 @@ namespace Edujugon\PushNotification\Channels;
 
 use Edujugon\PushNotification\Messages\PushMessage;
 
-class FcmChannel extends GcmChannel
+class FcmChannel extends PushChannel
 {
     /**
      * {@inheritdoc}

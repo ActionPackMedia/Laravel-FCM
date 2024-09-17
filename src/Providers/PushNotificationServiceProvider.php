@@ -23,7 +23,6 @@ class PushNotificationServiceProvider extends ServiceProvider implements Deferra
 
         $this->publishes([
             __DIR__.'/../Config/config.php' => $configPath.'/pushnotification.php',
-            __DIR__.'/../Config/iosCertificates' => $configPath.'/iosCertificates/',
         ], 'config');
     }
 
