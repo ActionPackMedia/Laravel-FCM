@@ -16,6 +16,10 @@ class FcmChannel extends GcmChannel
     
     protected function buildData(PushMessage $message)
     {
+        /**
+         * https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages?hl=en
+         * todo can add separate options for android and ios
+         */
         return [
             'notification' => [
                 'title' => $message->title,

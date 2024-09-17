@@ -148,7 +148,7 @@ class Fcm extends Gcm
                     'error' => $error,
                 ];
 
-                if (isset($error['error']['code']) && in_array($error['error']['code'], [400, 404])) {
+                if (isset($error['error']['code']) && $error['error']['code'] == 404) {
                     $this->unregisteredDeviceTokens[] = $deviceToken;
                 }
             },
