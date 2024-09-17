@@ -16,8 +16,6 @@ class PushNotification
      * @var PushService[]
      */
     protected $servicesList = [
-        'gcm' => Gcm::class,
-        'apn' => Apn::class,
         'fcm' => Fcm::class
     ];
 
@@ -26,7 +24,7 @@ class PushNotification
      *
      * @var string
      */
-    private $defaultServiceName = 'gcm';
+    private $defaultServiceName = 'fcm';
 
     /**
      * Devices' Token where send the notification
@@ -46,7 +44,7 @@ class PushNotification
      * PushNotification constructor.
      * @param String / a service name of the services list.
      */
-    public function __construct($service = null)
+    public function __construct($service = 'fcm')
     {
         if (!array_key_exists($service, $this->servicesList)) {
             $service = $this->defaultServiceName;
@@ -97,18 +95,14 @@ class PushNotification
 
         return $this;
     }
-
+    
     /**
      * @param string $api_key
      * @return $this
+     * @throws \Exception
      */
-    public function setApiKey($api_key)
+    public function setApiKey($api_key): PushNotification
     {
-        // if apn doesn't do anything
-        if (!$this->service instanceof Apn) {
-            $this->service->setApiKey($api_key);
-        }
-
         return $this;
     }
 
@@ -142,7 +136,7 @@ class PushNotification
      *
      * @return array $tokenUnRegistered
      */
-    public function getUnregisteredDeviceTokens()
+    public function getUnregisteredDeviceTokens(): array
     {
         return $this->service->getUnregisteredDeviceTokens($this->deviceTokens);
     }
